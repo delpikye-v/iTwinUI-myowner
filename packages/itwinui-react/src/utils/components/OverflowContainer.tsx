@@ -21,37 +21,19 @@ type OverflowContainerProps = {
    * @default 'horizontal'
    */
   overflowOrientation?: 'horizontal' | 'vertical';
-} & (
-  | {
-      children: React.ReactNode[];
-      /**
-       * Number of items to display. Since overflow detection considers *all* children, `itemsLength` may need to
-       * account for the `overflowTag` depending on your implementation to prevent off-by-one errors.
-       *
-       * Required if `children: React.ReactNode[]`.
-       */
-      itemsLength?: undefined;
-      /**
-       * What is rendered at `overflowLocation` when `OverflowContainer` starts overflowing.
-       *
-       * Required if `children: React.ReactNode[]`.
-       */
-      overflowTag: (visibleCount: number) => React.ReactNode;
-      /**
-       * Where the overflowTag is placed. Values:
-       * - start: At the start
-       * - end: At the end
-       * @default 'end'
-       */
-      overflowLocation?: 'start' | 'end';
-    }
-  | {
-      children: (visibleCount: number) => React.ReactNode;
-      itemsLength: number;
-      overflowTag?: undefined;
-      overflowLocation?: undefined;
-    }
-);
+  /**
+   * What is rendered at `overflowLocation` when `OverflowContainer` starts overflowing.
+   */
+  overflowTag: (visibleCount: number) => React.ReactNode;
+  /**
+   * Where the overflowTag is placed. Values:
+   * - start: At the start
+   * - end: At the end
+   * @default 'end'
+   */
+  overflowLocation?: 'start' | 'end';
+  children: React.ReactNode[];
+};
 
 /**
  * Renders fewer children + an `overflowTag` when it starts overflowing. When not overflowing, it renders all children.
@@ -96,14 +78,13 @@ export const OverflowContainer = React.forwardRef((props, ref) => {
     overflowTag,
     overflowLocation = 'end',
     children,
-    itemsLength,
     overflowDisabled = false,
     overflowOrientation,
     ...rest
   } = props;
 
   const [containerRef, _visibleCount] = _useOverflow(
-    typeof children === 'function' ? itemsLength ?? 0 : children.length + 1,
+    children.length + 1,
     overflowDisabled,
     overflowOrientation,
   );
@@ -116,11 +97,6 @@ export const OverflowContainer = React.forwardRef((props, ref) => {
    * - `visibleCount <= children.length` means that we show visibleCount - 1 children and 1 overflow tag.
    */
   const visibleItems = React.useMemo(() => {
-    // User wants complete control over what items are rendered.
-    if (typeof children === 'function' || overflowTag == null) {
-      return null;
-    }
-
     if (visibleCount > children.length) {
       return children;
     }
@@ -144,7 +120,7 @@ export const OverflowContainer = React.forwardRef((props, ref) => {
 
   return (
     <Box ref={useMergedRefs(ref, containerRef)} {...rest}>
-      {typeof children === 'function' ? children(visibleCount) : visibleItems}
+      {visibleItems}
     </Box>
   );
 }) as PolymorphicForwardRefComponent<'div', OverflowContainerProps>;
